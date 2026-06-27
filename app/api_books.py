@@ -1,0 +1,22 @@
+from fastapi import APIRouter, HTTPException
+
+from app import repository
+from app.db import get_pool
+from app.models import Book, BookDetail
+
+router = APIRouter(prefix="/api/books", tags=["books"])
+
+
+@router.get("", response_model=list[Book])
+async def list_books(limit: int = 50, offset: int = 0):
+    pool = get_pool()
+    return await repository.list_published_books(pool, limit=limit, offset=offset)
+
+
+@router.get("/{slug}", response_model=BookDetail)
+async def get_book(slug: str):
+    pool = get_pool()
+    book = await repository.get_book_by_slug(pool, slug, published_only=True)
+    if book is None:
+        raise HTTPException(status_code=404, detail="Book not found")
+    return book
