@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, HTTPException
 
 from app import repository
@@ -13,7 +15,23 @@ async def list_books(limit: int = 50, offset: int = 0):
     return await repository.list_published_books(pool, limit=limit, offset=offset)
 
 
-@router.get("/{slug}", response_model=BookDetail)
+@router.get("/{book_id}/sources")
+async def get_sources(book_id: UUID):
+    pool = get_pool()
+    rows = await pool.fetch(
+        """
+        SELECT id, stance, source_type, title,
+               author_or_outlet, reference_url, insight, created_at
+        FROM sources
+        WHERE book_id = $1
+        ORDER BY stance, created_at
+        """,
+        book_id,
+    )
+    return [dict(r) for r in rows]
+
+
+@router.get("/{slug:path}", response_model=BookDetail)
 async def get_book(slug: str):
     pool = get_pool()
     book = await repository.get_book_by_slug(pool, slug, published_only=True)

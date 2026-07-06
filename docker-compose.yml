@@ -15,5 +15,20 @@ services:
     ports:
       - "6379:6379"
 
+  backend:
+    build: .
+    profiles: [app]
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+
 volumes:
   dbdata:
+
+
+# docker compose up -d  [To run Postgres, Redis only in detached mode]
+# docker compose --profile app up -d  [To run Postgres, Redis, and the backend service in detached mode]

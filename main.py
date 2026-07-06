@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import api_books, api_ingest
+from app import api_auth, api_books, api_chat, api_comments, api_ingest
 from app.config import get_settings
 from app.db import close_pool, init_pool
 from app.queue import close_redis
@@ -30,8 +30,13 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    app.include_router(api_books.router)
+    # api_books is registered last: its GET /{slug:path} catch-all would
+    # otherwise shadow any other GET route nested under /api/books/{id}/...
     app.include_router(api_ingest.router)
+    app.include_router(api_auth.router)
+    app.include_router(api_chat.router)
+    app.include_router(api_comments.router)
+    app.include_router(api_books.router)
 
     @app.get("/health")
     async def health():
