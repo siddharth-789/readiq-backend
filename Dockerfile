@@ -15,4 +15,4 @@ ENV UVICORN_RELOAD=false
 
 EXPOSE 8080
 
-CMD ["sh", "-c". "uvicorn main:app --host $UVICORN_HOST --port ${PORT:-8080}"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
