@@ -72,10 +72,7 @@ jobs:
             --cpu 1 \
             --min-instances 0 \
             --max-instances 3 \
-            --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }}" \
-            --set-env-vars "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
-            --set-env-vars "AGENTS_CHAT_URL=${{ secrets.AGENTS_CHAT_URL }}" \
-            --set-env-vars "CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}"
+            ---set-env-vars "^|^DATABASE_URL=${{ secrets.DATABASE_URL }}|JWT_SECRET=${{ secrets.JWT_SECRET }}|AGENTS_CHAT_URL=${{ secrets.AGENTS_CHAT_URL }}|ENABLE_QUEUE=${{ secrets.ENABLE_QUEUE }}|CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}"
 
       - name: Show Service URL
         run: |
