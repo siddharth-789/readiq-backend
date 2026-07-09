@@ -7,10 +7,12 @@ _pool: asyncpg.Pool | None = None
 
 
 async def _on_connect(conn: asyncpg.Connection) -> None:
+    """Register the pgvector type codec on each new pool connection."""
     await register_vector(conn)
 
 
 async def init_pool() -> asyncpg.Pool:
+    """Create the module-level asyncpg pool, pinning search_path to the app schema."""
     global _pool
     settings = get_settings()
     _pool = await asyncpg.create_pool(
@@ -24,6 +26,7 @@ async def init_pool() -> asyncpg.Pool:
 
 
 async def close_pool() -> None:
+    """Close and clear the module-level pool, if one is open."""
     global _pool
     if _pool is not None:
         await _pool.close()
@@ -31,6 +34,7 @@ async def close_pool() -> None:
 
 
 def get_pool() -> asyncpg.Pool:
+    """Return the initialised pool, or raise if init_pool() hasn't run yet."""
     if _pool is None:
         raise RuntimeError("Database pool is not initialised")
     return _pool

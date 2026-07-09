@@ -18,6 +18,12 @@ async def chat(
     body: ChatAsk,
     user_id: UUID = Depends(get_current_user_id),
 ):
+    """Answer a question about a published book via the agents service, enforcing the daily rate limit.
+
+    Verifies the book is published, checks/updates the per-user daily quota, fetches or
+    creates the chat session, sends recent history plus the question to the agents
+    service synchronously over HTTP, and persists both sides of the exchange.
+    """
     settings = get_settings()
     pool = get_pool()
 
@@ -99,6 +105,7 @@ async def chat_history(
     book_id: UUID,
     user_id: UUID = Depends(get_current_user_id),
 ):
+    """Return the caller's most recent chat messages for a book, oldest first."""
     pool = get_pool()
     session_id = await repository.get_or_create_session(
         pool, book_id, user_id

@@ -11,6 +11,7 @@ bearer = HTTPBearer()
 def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(bearer),
 ) -> UUID:
+    """FastAPI dependency: decode the bearer JWT into a user id or raise 401."""
     try:
         return decode_token(credentials.credentials)
     except ValueError:

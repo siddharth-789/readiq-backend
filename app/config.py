@@ -6,6 +6,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """App configuration loaded from environment variables / .env."""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str = "postgresql://postgres:root@localhost:5432/postgres"
@@ -29,6 +31,7 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
+        """Parse CORS_ORIGINS as a JSON list if bracketed, else a comma-separated string."""
         value = self.cors_origins_raw.strip()
         if value.startswith("[") and value.endswith("]"):
             try:
@@ -40,4 +43,5 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """Return a cached, process-wide Settings instance."""
     return Settings()

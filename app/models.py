@@ -6,12 +6,16 @@ from pydantic import BaseModel, Field
 
 
 class CopyrightStatus(str, Enum):
+    """Legal basis for hosting a book's content."""
+
     public_domain = "public_domain"
     in_copyright = "in_copyright"
     permission_granted = "permission_granted"
 
 
 class SourceType(str, Enum):
+    """How a book's source material was supplied at ingest."""
+
     name_only = "name_only"
     pdf = "pdf"
     url = "url"
@@ -19,6 +23,8 @@ class SourceType(str, Enum):
 
 
 class BookStatus(str, Enum):
+    """Generation pipeline state: new -> processing -> ready -> published, or failed."""
+
     new = "new"
     processing = "processing"
     ready = "ready"
@@ -26,6 +32,8 @@ class BookStatus(str, Enum):
     failed = "failed"
 
 class ResearchStatus(str, Enum):
+    """State of the separate sourced-critique/support research step."""
+
     pending = "pending"
     completed = "completed"
     failed = "failed"
@@ -33,6 +41,8 @@ class ResearchStatus(str, Enum):
 
 
 class ChapterBase(BaseModel):
+    """Fields shared by chapter creation and read models."""
+
     chapter_number: int
     chapter_title: str | None = None
     summary: str | None = None
@@ -40,12 +50,16 @@ class ChapterBase(BaseModel):
 
 
 class Chapter(ChapterBase):
+    """A persisted chapter row."""
+
     id: UUID
     book_id: UUID
     created_at: datetime
 
 
 class BookCreate(BaseModel):
+    """Payload for creating a new book (parsed from the multipart ingest form)."""
+
     title: str
     author: str | None = None
     isbn: str | None = None
@@ -56,6 +70,8 @@ class BookCreate(BaseModel):
 
 
 class Book(BaseModel):
+    """A persisted book row, as returned by the public and ingest APIs."""
+
     id: UUID
     title: str
     author: str | None
@@ -77,27 +93,37 @@ class Book(BaseModel):
 
 
 class BookDetail(Book):
+    """A single book with its chapters, returned by the book detail endpoint."""
+
     chapters: list[Chapter] = Field(default_factory=list)
 
 
 # Auth
 class UserRegister(BaseModel):
+    """Registration payload: email + plaintext password to be hashed."""
+
     email: str
     password: str
 
 
 class UserLogin(BaseModel):
+    """Login payload: email + plaintext password to verify."""
+
     email: str
     password: str
 
 
 class TokenResponse(BaseModel):
+    """JWT issued on successful register/login."""
+
     access_token: str
     token_type: str = "bearer"
 
 
 # Chat
 class ChatMessageOut(BaseModel):
+    """A single stored chat message (user or assistant turn)."""
+
     id: UUID
     session_id: UUID
     role: str
@@ -106,10 +132,14 @@ class ChatMessageOut(BaseModel):
 
 
 class ChatAsk(BaseModel):
+    """Payload for asking a question in a book's chat."""
+
     question: str
 
 
 class ChatAnswerResponse(BaseModel):
+    """Chat answer plus the caller's remaining daily quota."""
+
     answer: str
     session_id: UUID
     messages_used_today: int
@@ -118,6 +148,8 @@ class ChatAnswerResponse(BaseModel):
 
 # Comments
 class CommentCreate(BaseModel):
+    """Payload for submitting a comment; honeypot must stay empty (bot filter)."""
+
     author_name: str
     author_email: str
     body: str
@@ -125,6 +157,8 @@ class CommentCreate(BaseModel):
 
 
 class CommentOut(BaseModel):
+    """Public comment representation; author_email is deliberately omitted."""
+
     id: UUID
     book_id: UUID
     author_name: str

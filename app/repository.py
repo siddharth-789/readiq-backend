@@ -22,6 +22,7 @@ _CHAPTER_COLUMNS = """
 async def list_published_books(
     pool: asyncpg.Pool, limit: int = 50, offset: int = 0
 ) -> list[Book]:
+    """Fetch published books, most recently published first, paginated."""
     rows = await pool.fetch(
         f"""
         SELECT {_BOOK_COLUMNS} FROM books
@@ -36,6 +37,7 @@ async def list_published_books(
 
 
 async def get_chapters(pool: asyncpg.Pool, book_id: UUID) -> list[Chapter]:
+    """Fetch a book's chapters in chapter_number order."""
     rows = await pool.fetch(
         f"""
         SELECT {_CHAPTER_COLUMNS} FROM chapters
@@ -50,6 +52,7 @@ async def get_chapters(pool: asyncpg.Pool, book_id: UUID) -> list[Chapter]:
 async def get_book_by_slug(
     pool: asyncpg.Pool, slug: str, published_only: bool = True
 ) -> BookDetail | None:
+    """Fetch a book with its chapters by slug; optionally restrict to published rows."""
     query = f"SELECT {_BOOK_COLUMNS} FROM books WHERE slug = $1"
     if published_only:
         query += " AND status = 'published'"
@@ -61,6 +64,7 @@ async def get_book_by_slug(
 
 
 async def get_book_by_id(pool: asyncpg.Pool, book_id: UUID) -> Book | None:
+    """Fetch a single book by id, regardless of status."""
     row = await pool.fetchrow(
         f"SELECT {_BOOK_COLUMNS} FROM books WHERE id = $1",
         book_id,
@@ -71,6 +75,7 @@ async def get_book_by_id(pool: asyncpg.Pool, book_id: UUID) -> Book | None:
 async def update_book_status(
     pool: asyncpg.Pool, book_id: UUID, status: str
 ) -> Book | None:
+    """Set a book's status column and return the updated row."""
     row = await pool.fetchrow(
         f"""
         UPDATE books SET status = $1
@@ -84,10 +89,12 @@ async def update_book_status(
 
 
 def _slugify(value: str) -> str:
+    """Lowercase and collapse runs of non-alphanumeric chars into single dashes."""
     return _SLUG_RE.sub("-", value.lower()).strip("-")
 
 
 async def _generate_unique_slug(pool: asyncpg.Pool, author: str | None, title: str) -> str:
+    """Build an 'author-slug/title-slug' (or just 'title-slug') slug, appending -2, -3, ... on collision."""
     title_part = _slugify(title)
     base = f"{_slugify(author)}/{title_part}" if author else title_part
 
@@ -105,6 +112,7 @@ async def create_book(
     source_type: str,
     source_ref: str | None,
 ) -> Book:
+    """Insert a new book row in 'new' status with an auto-generated unique slug."""
     slug = await _generate_unique_slug(pool, data.author, data.title)
     row = await pool.fetchrow(
         f"""
@@ -133,6 +141,7 @@ async def create_book(
 async def create_user(
     pool: asyncpg.Pool, email: str, password_hash: str
 ) -> UUID:
+    """Insert a new user row and return its id."""
     row = await pool.fetchrow(
         "INSERT INTO users (email, password_hash) "
         "VALUES ($1, $2) RETURNING id",
@@ -142,6 +151,7 @@ async def create_user(
 
 
 async def get_user_by_email(pool: asyncpg.Pool, email: str) -> asyncpg.Record | None:
+    """Fetch a user row (with password_hash) by email, or None if not registered."""
     return await pool.fetchrow(
         "SELECT id, email, password_hash FROM users WHERE email = $1",
         email,
@@ -152,6 +162,7 @@ async def get_user_by_email(pool: asyncpg.Pool, email: str) -> asyncpg.Record | 
 async def get_or_create_session(
     pool: asyncpg.Pool, book_id: UUID, user_id: UUID
 ) -> UUID:
+    """Return the existing (book_id, user_id) chat session id, creating one if needed."""
     row = await pool.fetchrow(
         """
         INSERT INTO chat_sessions (book_id, user_id)
@@ -169,6 +180,7 @@ async def get_or_create_session(
 async def get_session_messages(
     pool: asyncpg.Pool, session_id: UUID, limit: int = 8
 ) -> list[asyncpg.Record]:
+    """Fetch the most recent messages in a chat session, newest first."""
     return await pool.fetch(
         """
         SELECT id, session_id, role, content, created_at
@@ -184,6 +196,7 @@ async def get_session_messages(
 async def save_message(
     pool: asyncpg.Pool, session_id: UUID, role: str, content: str
 ) -> asyncpg.Record:
+    """Insert one chat message (user or assistant turn) into a session."""
     return await pool.fetchrow(
         """
         INSERT INTO chat_messages (session_id, role, content)
@@ -198,6 +211,7 @@ async def save_message(
 async def count_user_messages_today(
     pool: asyncpg.Pool, user_id: UUID, book_id: UUID
 ) -> int:
+    """Return how many chat messages this user has sent today for this book, via chat_daily_usage."""
     row = await pool.fetchrow(
         """
         SELECT COALESCE(messages_today, 0) AS messages_today
@@ -213,6 +227,7 @@ async def count_user_messages_today(
 async def get_book_chat_context(
     pool: asyncpg.Pool, book_id: UUID
 ) -> asyncpg.Record | None:
+    """Fetch minimal book info (id, title, author) if published, else None."""
     return await pool.fetchrow(
         """
         SELECT id, title, author
@@ -228,6 +243,7 @@ async def get_approved_comments(
     pool: asyncpg.Pool,
     book_id: UUID,
 ) -> list[asyncpg.Record]:
+    """Fetch a book's approved comments, most recent first."""
     return await pool.fetch(
         """
         SELECT id, book_id, author_name, body, created_at

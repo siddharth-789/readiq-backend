@@ -8,16 +8,19 @@ from app.config import get_settings
 
 
 def hash_password(password: str) -> str:
+    """Hash a plaintext password with bcrypt (default work factor)."""
     return bcrypt.hashpw(
         password.encode(), bcrypt.gensalt()
     ).decode()
 
 
 def verify_password(password: str, hashed: str) -> bool:
+    """Check a plaintext password against a bcrypt hash."""
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
 def create_token(user_id: UUID) -> str:
+    """Issue a JWT for user_id that expires after jwt_expire_minutes."""
     settings = get_settings()
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.jwt_expire_minutes
@@ -30,6 +33,10 @@ def create_token(user_id: UUID) -> str:
 
 
 def decode_token(token: str) -> UUID:
+    """Verify and decode a JWT, returning the user id from its 'sub' claim.
+
+    Raises ValueError if the token is missing, expired, or malformed.
+    """
     settings = get_settings()
     try:
         payload = jwt.decode(

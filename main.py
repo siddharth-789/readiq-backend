@@ -11,6 +11,7 @@ from app.queue import close_redis
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Init the DB pool on startup; close pool and Redis client on shutdown."""
     await init_pool()
     try:
         yield
@@ -20,6 +21,7 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    """Build the FastAPI app: CORS middleware, all routers (api_books last), and /health."""
     settings = get_settings()
     app = FastAPI(title="Book Summary API", version="0.1.0", lifespan=lifespan)
 
@@ -40,6 +42,7 @@ def create_app() -> FastAPI:
 
     @app.get("/health")
     async def health():
+        """Liveness check."""
         return {"status": "ok"}
 
     return app

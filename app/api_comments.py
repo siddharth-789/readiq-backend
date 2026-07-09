@@ -18,6 +18,7 @@ _MAX_NAME = 80
     response_model=list[CommentOut],
 )
 async def list_comments(book_id: UUID):
+    """List a book's approved comments, most recent first."""
     pool = get_pool()
     rows = await repository.get_approved_comments(pool, book_id)
     return [CommentOut(**dict(r)) for r in rows]
@@ -29,6 +30,12 @@ async def list_comments(book_id: UUID):
     status_code=status.HTTP_201_CREATED,
 )
 async def create_comment(book_id: UUID, data: CommentCreate):
+    """Validate and insert a pending comment on a published book (no auth required).
+
+    Rejects honeypot-filled submissions as bots, validates name/email/body length
+    and format, then inserts as 'pending'; 409 if the email already has a live
+    comment on this book.
+    """
     # Honeypot check: bots fill hidden fields, humans leave them empty
     if data.honeypot:
         raise HTTPException(

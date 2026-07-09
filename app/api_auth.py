@@ -10,6 +10,7 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
 async def register(data: UserRegister):
+    """Create a user with a bcrypt-hashed password and return a JWT; 409 if email is taken."""
     pool = get_pool()
     existing = await repository.get_user_by_email(pool, data.email)
     if existing:
@@ -24,6 +25,7 @@ async def register(data: UserRegister):
 
 @router.post("/login", response_model=TokenResponse)
 async def login(data: UserLogin):
+    """Verify email/password and return a JWT; 401 on any mismatch."""
     pool = get_pool()
     user = await repository.get_user_by_email(pool, data.email)
     if not user or not verify_password(data.password, user["password_hash"]):
